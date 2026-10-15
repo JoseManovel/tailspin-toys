@@ -9,6 +9,19 @@ import { getAllGames } from '../lib/games';
 export const prerender = true;
 
 const games = await getAllGames(getDatabase());
+
+function uniqueOptions(items: ({ id: number; name: string } | null)[]): { id: number; name: string }[] {
+  const byId = new Map<number, string>();
+  for (const item of items) {
+    if (item) byId.set(item.id, item.name);
+  }
+  return [...byId].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+const categories = uniqueOptions(games.map((g) => g.category));
+const publishers = uniqueOptions(games.map((g) => g.publisher));
+const selectClass =
+  'bg-slate-800 text-slate-100 border border-slate-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none';
 ---
 
 <Layout title="Tailspin Toys - Crowdfunding your new favorite game!">
@@ -24,10 +37,55 @@ const games = await getAllGames(getDatabase());
       {games.length === 0 ? (
         <EmptyState text="No games available at the moment." />
       ) : (
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="games-grid">
-          {games.map((game) => <GameCard game={game} />)}
-        </div>
+        <>
+          <form class="flex flex-wrap gap-4 mb-6" data-testid="game-filters" onsubmit="return false">
+            <div class="flex flex-col gap-1">
+              <label for="category-filter" class="text-sm text-slate-300">Category</label>
+              <select id="category-filter" class={selectClass} data-testid="category-filter">
+                <option value="">All categories</option>
+                {categories.map((c) => <option value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="publisher-filter" class="text-sm text-slate-300">Publisher</label>
+              <select id="publisher-filter" class={selectClass} data-testid="publisher-filter">
+                <option value="">All publishers</option>
+                {publishers.map((p) => <option value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          </form>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="games-grid">
+            {games.map((game) => <GameCard game={game} />)}
+          </div>
+
+          <div id="no-matches" class="hidden" role="status" aria-live="polite" data-testid="no-matches">
+            <EmptyState text="No games match the selected filters." />
+          </div>
+        </>
       )}
     </div>
   </div>
 </Layout>
+
+<script>
+  const category = document.querySelector<HTMLSelectElement>('#category-filter');
+  const publisher = document.querySelector<HTMLSelectElement>('#publisher-filter');
+  const noMatches = document.querySelector<HTMLElement>('#no-matches');
+  const cards = document.querySelectorAll<HTMLElement>('[data-testid="game-card"]');
+
+  function applyFilters(): void {
+    let visible = 0;
+    cards.forEach((card) => {
+      const show =
+        (!category?.value || card.dataset.categoryId === category.value) &&
+        (!publisher?.value || card.dataset.publisherId === publisher.value);
+      card.classList.toggle('hidden', !show);
+      if (show) visible++;
+    });
+    noMatches?.classList.toggle('hidden', visible > 0);
+  }
+
+  category?.addEventListener('change', applyFilters);
+  publisher?.addEventListener('change', applyFilters);
+</script>
