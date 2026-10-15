@@ -1,5 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { clampRating, formatStarRating } from './ratings';
+import { clampRating, formatRatingOutOfFive, formatStarRating } from './ratings';
+
+describe('formatRatingOutOfFive', () => {
+    it('formats a rating out of 5 with one decimal', () => {
+        expect(formatRatingOutOfFive(4.5)).toBe('4.5 / 5');
+        expect(formatRatingOutOfFive(3)).toBe('3.0 / 5');
+    });
+
+    it('clamps out-of-range ratings', () => {
+        expect(formatRatingOutOfFive(9)).toBe('5.0 / 5');
+        expect(formatRatingOutOfFive(-1)).toBe('0.0 / 5');
+    });
+
+    it('returns a placeholder when the rating is null', () => {
+        expect(formatRatingOutOfFive(null)).toBe('No rating yet');
+    });
+});
 
 describe('clampRating', () => {
     it('returns the value unchanged when within range', () => {
