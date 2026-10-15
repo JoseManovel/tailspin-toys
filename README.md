@@ -42,6 +42,10 @@ npm run build      # prebuild migrates + seeds, then builds the static site
 npm run preview
 ```
 
+## Filtering games
+
+The home page has **Category** and **Publisher** dropdowns that filter the game grid in the browser (combined with AND). Game cards expose `data-category-id` / `data-publisher-id` for this; a small scoped script in `src/pages/index.astro` does the toggling.
+
 ## Database
 
 The SQLite database is built from `db/games.csv` — there is no live data to migrate.
